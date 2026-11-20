@@ -6,7 +6,6 @@ import {
   OrchestratorMcpFailure,
   ServerSettings,
   ServerSettingsPatch,
-  UsageLimitRoutingStatus,
 } from "@t3tools/contracts";
 import * as Schema from "effect/Schema";
 import { Tool, Toolkit } from "effect/ai";
@@ -14,7 +13,6 @@ import * as ServerEnvironment from "../../../environment/ServerEnvironment.ts";
 import * as ThreadCommandExecutor from "../../../orchestration-v2/ThreadCommandExecutor.ts";
 import * as ThreadManagementService from "../../../orchestration-v2/ThreadManagementService.ts";
 import * as Settings from "../../../serverSettings.ts";
-import * as UsageLimitSources from "../../../usage/UsageLimitSources.ts";
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
 
 const PreferenceFields = {
@@ -69,21 +67,4 @@ const EnvironmentPreferencesTool = Tool.make("t3_environment_preferences_update"
   }),
   success: Schema.Struct(PreferenceFields),
 }).annotate(Tool.Destructive, true);
-const VibeProxyStatusTool = Tool.make("t3_vibeproxy_status", {
-  description:
-    "Read cached VibeProxy / CLIProxyAPI subscription quotas for routing. Check timestamps and reset windows. Empty or unavailable data means unknown. Set environmentId for a linked environment.",
-  parameters: Schema.Struct({ environmentId: OrchestratorMcpEnvironmentTarget }),
-  success: UsageLimitRoutingStatus,
-  failure: OrchestratorMcpFailure,
-  failureMode: "return",
-  dependencies: [McpInvocationContext.McpInvocationContext, UsageLimitSources.UsageLimitSources],
-})
-  .annotate(Tool.Title, "Read VibeProxy usage limits")
-  .annotate(Tool.Readonly, true)
-  .annotate(Tool.Destructive, false);
-
-export const EnvironmentToolkit = Toolkit.make(
-  EnvironmentReadTool,
-  EnvironmentPreferencesTool,
-  VibeProxyStatusTool,
-);
+export const EnvironmentToolkit = Toolkit.make(EnvironmentReadTool, EnvironmentPreferencesTool);

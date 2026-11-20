@@ -39,7 +39,6 @@ import { ScheduledTaskService } from "../scheduledTasks/ScheduledTaskService.ts"
 import { SecretRequests } from "../secrets/SecretRequests.ts";
 import { ServerSettingsService } from "../serverSettings.ts";
 import { SourceControlRepositoryService } from "../sourceControl/SourceControlRepositoryService.ts";
-import { UsageLimitSources } from "../usage/UsageLimitSources.ts";
 import { GitVcsDriver } from "../vcs/GitVcsDriver.ts";
 import { VcsStatusBroadcaster } from "../vcs/VcsStatusBroadcaster.ts";
 import { buildCodexAdditionalContext } from "./CodexDeveloperInstructions.ts";
@@ -80,7 +79,6 @@ const toolHandlerServices = Layer.mergeAll(
   Layer.mock(ThreadLaunchService)({}),
   Layer.mock(ThreadManagementService)({}),
   Layer.mock(ThreadSearch)({}),
-  Layer.mock(UsageLimitSources)({}),
   Layer.mock(VcsStatusBroadcaster)({}),
 ).pipe(Layer.provideMerge(Layer.mergeAll(NodeServices.layer, NodeCrypto.layer)));
 

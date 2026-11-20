@@ -1,5 +1,4 @@
 import * as Schema from "effect/Schema";
-import * as Struct from "effect/Struct";
 
 import {
   ForwardCompatibleArray,
@@ -93,36 +92,6 @@ export type UsageLimitSourceSnapshot = typeof UsageLimitSourceSnapshot.Type;
 
 export const UsageLimitSourceSnapshots = ForwardCompatibleArray(UsageLimitSourceSnapshot);
 export type UsageLimitSourceSnapshots = typeof UsageLimitSourceSnapshots.Type;
-
-export const UsageLimitRoutingStatus = Schema.Struct({
-  sources: Schema.Array(
-    Schema.Struct({
-      ...Struct.pick(UsageLimitSourceSnapshot.fields, ["id", "label", "checkedAt"]),
-      status: Schema.Literals(["ready", "no_accounts", "unavailable"]),
-      accounts: Schema.Array(
-        Schema.Struct({
-          driver: ProviderDriverKind,
-          checkedAt: IsoDateTime,
-          status: Schema.Literals(["ready", "unavailable"]),
-          windows: Schema.Array(
-            ServerProviderUsageWindow.mapFields(
-              Struct.pick([
-                "kind",
-                "label",
-                "modelIds",
-                "providerIds",
-                "usedPercent",
-                "resetsAt",
-                "windowDurationMins",
-              ]),
-            ),
-          ),
-        }),
-      ),
-    }),
-  ),
-});
-export type UsageLimitRoutingStatus = typeof UsageLimitRoutingStatus.Type;
 
 export const UsageLimitSourceConsumeResetCreditInput = Schema.Struct({
   sourceId: UsageLimitSourceId,
