@@ -8,6 +8,7 @@ import {
   settingsSecretLiteral,
   type UsageLimitSourceId,
   type UsageLimitSourceSnapshot,
+  type UsageLimitRoutingStatus,
 } from "@t3tools/contracts";
 import { resolveServerBackgroundActivitySettings } from "@t3tools/shared/backgroundActivitySettings";
 import * as Context from "effect/Context";
@@ -39,6 +40,34 @@ export class UsageLimitSources extends Context.Service<
     ) => Effect.Effect<ProviderConsumeResetCreditResult, UsageLimitSourceError>;
   }
 >()("t3/usage/UsageLimitSources") {}
+
+export const readRoutingStatus = Effect.fn("UsageLimitSources.readRoutingStatus")(function* () {
+  const sources = yield* UsageLimitSources;
+  const snapshots = yield* sources.current;
+  return {
+    sources: snapshots.map(({ id, label, checkedAt, accounts, error }) => ({
+      id,
+      label,
+      checkedAt,
+      status: error !== undefined ? "unavailable" : accounts.length === 0 ? "no_accounts" : "ready",
+      accounts:
+        error !== undefined
+          ? []
+          : accounts.map(({ driver, usageLimits }) => {
+              const windows =
+                usageLimits.unavailable === undefined
+                  ? usageLimits.windows.map(({ id: _id, ...window }) => window)
+                  : [];
+              return {
+                driver,
+                checkedAt: usageLimits.checkedAt,
+                status: windows.length > 0 ? "ready" : "unavailable",
+                windows,
+              };
+            }),
+    })),
+  } satisfies UsageLimitRoutingStatus;
+});
 
 function sourceLabel(id: string, config: UsageLimitSourceConfig): string {
   if (config.label) return config.label;
