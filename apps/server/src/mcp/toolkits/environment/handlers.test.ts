@@ -2,12 +2,9 @@ import { expect, it } from "@effect/vitest";
 import {
   DEFAULT_SERVER_SETTINGS,
   EnvironmentId,
-  ProviderDriverKind,
   ProviderInstanceId,
   ThreadId,
-  UsageLimitSourceId,
   type OrchestrationV2ThreadShell,
-  type UsageLimitSourceSnapshot,
 } from "@t3tools/contracts";
 import * as Deferred from "effect/Deferred";
 import * as Effect from "effect/Effect";
@@ -20,7 +17,6 @@ import * as Environment from "../../../environment/ServerEnvironment.ts";
 import * as ThreadCommandExecutor from "../../../orchestration-v2/ThreadCommandExecutor.ts";
 import * as ThreadManagement from "../../../orchestration-v2/ThreadManagementService.ts";
 import * as Settings from "../../../serverSettings.ts";
-import * as UsageLimitSources from "../../../usage/UsageLimitSources.ts";
 import * as McpInvocationContext from "../../McpInvocationContext.ts";
 import * as McpToolAccess from "../../McpToolAccess.ts";
 import { liveThreadShell } from "../../McpToolAccess.testkit.ts";
@@ -29,129 +25,6 @@ import { EnvironmentToolkit } from "./tools.ts";
 
 const environmentId = EnvironmentId.make("environment:preferences");
 const threadId = ThreadId.make("thread:preferences");
-
-it.effect("returns cached hub quotas for routing without account metadata or probe errors", () =>
-  Effect.gen(function* () {
-    const toolkit = yield* EnvironmentToolkit;
-    const result = yield* toolkit
-      .handle("t3_vibeproxy_status", {})
-      .pipe(Stream.unwrap, Stream.runCollect);
-    expect(result.at(-1)?.result).toEqual({
-      sources: [
-        {
-          id: "hub",
-          label: "VibeProxy",
-          checkedAt,
-          status: "ready",
-          accounts: [
-            {
-              driver: "claudeAgent",
-              checkedAt: accountCheckedAt,
-              status: "ready",
-              windows: [
-                {
-                  kind: "weekly",
-                  label: "Fable",
-                  modelIds: ["claude-fable"],
-                  usedPercent: 100,
-                  resetsAt: "2026-11-24T09:00:00.000Z",
-                },
-                { kind: "session", label: "Session", usedPercent: 0, windowDurationMins: 300 },
-              ],
-            },
-            { driver: "codex", checkedAt: accountCheckedAt, status: "unavailable", windows: [] },
-          ],
-        },
-        {
-          id: "offline",
-          label: "Offline hub",
-          checkedAt,
-          status: "unavailable",
-          accounts: [],
-        },
-        { id: "empty", label: "Empty hub", checkedAt, status: "no_accounts", accounts: [] },
-      ],
-    });
-  }).pipe(
-    Effect.provide(McpToolAccess.HandlersLayer.layer(EnvironmentHandlers.layer)),
-    Effect.provideService(McpInvocationContext.McpInvocationContext, {
-      environmentId,
-      requestNamespace: "client:routing",
-      thread: undefined,
-      client: { sessionId: "routing", label: "Routing client", access: "read-only" },
-      capabilities: new Set(["orchestration" as const]),
-      issuedAt: 0,
-    }),
-    Effect.provide(
-      Layer.mock(UsageLimitSources.UsageLimitSources)({ current: Effect.succeed(sources) }),
-    ),
-  ),
-);
-
-const checkedAt = "2026-11-20T09:00:00.000Z";
-const accountCheckedAt = "2026-11-20T09:00:01.000Z";
-const sources: ReadonlyArray<UsageLimitSourceSnapshot> = [
-  {
-    id: UsageLimitSourceId.make("hub"),
-    kind: "cliproxy",
-    label: "VibeProxy",
-    checkedAt,
-    accounts: [
-      {
-        id: "claude-account.json",
-        email: "developer@example.test",
-        workspaceId: "workspace-id",
-        driver: ProviderDriverKind.make("claudeAgent"),
-        usageLimits: {
-          checkedAt: accountCheckedAt,
-          credentialFingerprint: "credential-fingerprint",
-          resetCredits: { availableCount: 1, nextCreditId: "reset-credit-id" },
-          windows: [
-            {
-              id: "fable-weekly",
-              kind: "weekly",
-              label: "Fable",
-              modelIds: ["claude-fable"],
-              usedPercent: 100,
-              resetsAt: "2026-11-24T09:00:00.000Z",
-            },
-            {
-              id: "five-hour",
-              kind: "session",
-              label: "Session",
-              usedPercent: 0,
-              windowDurationMins: 300,
-            },
-          ],
-        },
-      },
-      {
-        id: "codex-account.json",
-        driver: ProviderDriverKind.make("codex"),
-        usageLimits: {
-          checkedAt: accountCheckedAt,
-          unavailable: { reason: "probeFailed", message: "private upstream details" },
-          windows: [{ id: "weekly", kind: "weekly", label: "Weekly", usedPercent: 20 }],
-        },
-      },
-    ],
-  },
-  {
-    id: UsageLimitSourceId.make("offline"),
-    kind: "cliproxy",
-    label: "Offline hub",
-    checkedAt,
-    error: "private source error",
-    accounts: [],
-  },
-  {
-    id: UsageLimitSourceId.make("empty"),
-    kind: "cliproxy",
-    label: "Empty hub",
-    checkedAt,
-    accounts: [],
-  },
-];
 
 it.effect("refuses a preferences update when the caller's turn ends while it waits", () =>
   Effect.gen(function* () {

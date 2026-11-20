@@ -184,12 +184,6 @@ This connection supplies usage information; configure
 the provider separately to send agent requests through the hub. Remove the hub from the same
 settings section when you no longer need it.
 
-Ask an agent to check VibeProxy usage before picking a model or provider. The
-`t3_vibeproxy_status` MCP tool reads the cached limits from this environment or
-from a linked environment you specify. Use the check time, usage percentage,
-and reset time to judge headroom. Missing or unavailable readings mean the
-remaining quota is unknown.
-
 ## Subscription usage widget
 
 Add **Subscription usage** from your iOS or Android widget gallery to see remaining Codex and
